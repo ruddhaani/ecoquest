@@ -20,7 +20,9 @@ const EditProfile = () => {
 
     const [loading , setLoading] = useState(false);
 
-    const onPickImage = () => {};
+    const onPickImage = () => {
+
+    };
 
     const [user , setUser] = useState({
         name : '',
@@ -76,7 +78,7 @@ const EditProfile = () => {
             <View style = {styles.form}>
                 <View style = {styles.avatarContainer}>
                     <Image source={imageSource} style = {styles.avatar} />
-                    <Pressable style = {styles.cameraIcon}>
+                    <Pressable style = {styles.cameraIcon} onPress={onPickImage}>
                         <Icon name="camera" size = {20} strokeWidth={2.5} />
                     </Pressable>
                 </View>
