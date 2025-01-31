@@ -10,7 +10,7 @@ export const AuthProvider = ({children}) => {
     }
 
     const setUserData = userData => {
-        setUser(prevUser => ({ ...prevUser, ...userData }));
+        setUser(prevUser => ({ ...prevUser, ...userData}));
     }
 
     return (
