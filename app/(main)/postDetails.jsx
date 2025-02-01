@@ -2,7 +2,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import React, { useEffect, useRef, useState } from 'react'
 import ScreenWrapper from '../../components/ScreenWrapper'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { createComment, fetchSinglePost, removeComment } from '../../services/postService'
+import { createComment, fetchSinglePost, removeComment, removePost } from '../../services/postService'
 import { theme } from '../../constants/theme'
 import { hp, wp } from '../../helpers/common'
 import PostCard from '../../components/PostCard'
@@ -45,16 +45,28 @@ const PostDetails = () => {
       .channel(`comments:${postId}`) // Use unique channel name
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'comments', filter: `postId=eq.${postId}` },
+        { event: 'INSERT', schema: 'public' , table: 'comments', filter: `postId=eq.${postId}` },
         async (payload) => {
           console.log("New Comment Payload:", payload);
           if (payload.new) {
             await handleNewComment(payload.new);
           }
         }
+      ).on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'comments', filter: `postId=eq.${postId}` },
+        async (payload) => {
+          console.log("Deleted Comment Payload:", payload);
+          if (payload.old) {
+            setPost(prevPost => {
+              let updatedPost = { ...prevPost };
+              updatedPost.comments = updatedPost.comments.filter(c => c.id !== payload.old.id);
+              return updatedPost;
+            });
+          }
+        }
       )
-      .subscribe();
-  
+      .subscribe();  
     getPostDetails();
   
     return () => {
@@ -88,6 +100,21 @@ const PostDetails = () => {
     }else{
       Alert.alert('Comment' , res.msg);
     }
+  }
+
+  const onDeletePost = async (item) => {
+    //delete post here
+    let res = await removePost(post.id);
+    if(res.success){
+      router.back();
+    }else{
+      Alert.alert('Delete' , res.msg);
+    }
+  }
+
+  const onEditPost = async (item) => {
+    router.back();
+    router.push({pathname : 'newPost' , params: {...item }})
   }
 
   const onDeleteComment = async (comment) => {
@@ -130,6 +157,9 @@ const PostDetails = () => {
           router={router}
           hasShadow={false}
           showMoreIcon={false}
+          showDelete= {true}
+          onDelete = {onDeletePost}
+          onEdit = {onEditPost}
         />
 
         {/* comment */}

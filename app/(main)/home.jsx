@@ -4,7 +4,7 @@ import ScreenWrapper from '../../components/ScreenWrapper'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { theme } from '../../constants/theme'
-import { hp , wp } from '../../helpers/common'
+import { hp, wp } from '../../helpers/common'
 import Icon from '../../assets/icons'
 import { useRouter } from 'expo-router'
 import Avatar from '../../components/Avatar'
@@ -16,68 +16,122 @@ import { getUserData } from '../../services/userServices'
 var limit = 0;
 
 const Home = () => {
-    const handlePostEvent = async (payload) => {
-        if(payload.eventType == "INSERT" && payload?.new?.id){
-          let newPost = {...payload.new};
-          let res = await getUserData(newPost.userId);
-          newPost.user = res.success ? res.data : {};
-          setPosts(prevPosts => [newPost, ...prevPosts]);
-        }
+  const handlePostEvent = async (payload) => {
+    if (payload.eventType === "INSERT" && payload?.new?.id) {
+      let newPost = { ...payload.new };
+      let res = await getUserData(newPost.userId);
+      newPost.postLikes = [];
+      newPost.comments = [{ count: 0 }];
+      newPost.user = res.success ? res.data : {};
+      setPosts((prevPosts) => [newPost, ...prevPosts]);
     }
 
-    useEffect(() => {
-      let postChannel = supabase
+    if (payload.eventType === "DELETE" && payload.old.id) {
+      setPosts(prevPosts => {
+        let updatedPosts = prevPosts.filter(post => post.id != payload.old.id);
+        return updatedPosts;
+      })
+    }
+
+    if (payload.eventType === "UPDATE" && payload?.new?.id) {
+      setPosts(prevPosts => {
+        let updatedPosts = prevPosts.map(post => {
+          if (post.id == payload.new.id) {
+            post.body = payload.new.body;
+            post.file = payload.new.file;
+          }
+
+          return post;
+        });
+
+        return updatedPosts;
+      });
+    }
+  };
+
+  const handleCommentEvent = (payload) => {
+    if (payload.eventType === "DELETE") {
+      getPosts();
+    } else {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === (payload.eventType === "INSERT" ? payload.new.postId : payload.old?.postId)
+            ? {
+              ...post,
+              comments: [{ count: post.comments[0].count + (payload.eventType === "INSERT" ? 1 : -1) }],
+            }
+            : post
+        )
+      );
+    }
+  };
+  useEffect(() => {
+    let postChannel = supabase
       .channel('posts')
-      .on('postgres_changes' , {event: '*' , schema: 'public' , table: 'posts'}, (payload) => {handlePostEvent(payload);})
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'posts' },
+        (payload) => handlePostEvent(payload)
+      )
       .subscribe();
 
-      getPosts();
+    let commentChannel = supabase
+      .channel('comments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => handleCommentEvent(payload)
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(postChannel);
+    getPosts();
+
+    return () => {
+      supabase.removeChannel(postChannel);
+      supabase.removeChannel(commentChannel);
+    };
+  }, []);
+
+
+  const { user, setAuth } = useAuth();
+  const router = useRouter();
+
+  const [posts, setPosts] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [startLoading, setStartLoading] = useState(false);
+
+  const getPosts = async () => {
+    if (!hasMore) return null;
+
+    limit += 4;
+    let res = await fetchPosts(limit);
+
+    if (res.success) {
+      if (posts.length == res.data.length) {
+        setHasMore(false);
       }
-
-    } , []);
-
-    const {user , setAuth} = useAuth();
-    const router = useRouter();
-
-    const [posts , setPosts] = useState([]);
-    const [hasMore , setHasMore] = useState(true);
-    const [startLoading , setStartLoading] = useState(false);
-
-    const getPosts = async () => {
-        if(!hasMore) return null;
-
-        limit += 4;
-        let res = await fetchPosts();
-        
-        if(res.success){
-          if(posts.length == res.data.length){
-            setHasMore(false);
-          }
-          setPosts(res.data);
-        }
+      setPosts(res.data);
     }
+  }
 
-    // console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
-    // const onLogout = async () => {
-    //     // setAuth(null);
+  // console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
+  // const onLogout = async () => {
+  //     // setAuth(null);
 
-    //     console.log('clicked')
-    //     const {error} = await supabase.auth.signOut();
-    //     if(error){
-    //         Alert.alert('Signout' , "Error signing out!");
-    //     }
-    // }
+  //     console.log('clicked')
+  //     const {error} = await supabase.auth.signOut();
+  //     if(error){
+  //         Alert.alert('Signout' , "Error signing out!");
+  //     }
+  // }
   return (
     <ScreenWrapper bg='white'>
-      <View style = {styles.container}>
+      <View style={styles.container}>
         {/* Header */}
 
-        <View style = {styles.header}>
-          <Text style = {styles.title} >EcoQuest</Text>
-          <View style = {styles.icons}>
+        <View style={styles.header}>
+          <Text style={styles.title} >EcoQuest</Text>
+          <View style={styles.icons}>
             <Pressable onPress={() => router.push('notifications')}>
               <Icon name="heart" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
             </Pressable>
@@ -87,11 +141,11 @@ const Home = () => {
             </Pressable>
 
             <Pressable onPress={() => router.push('profile')}>
-              <Avatar 
+              <Avatar
                 uri={user?.image}
                 size={hp(3.8)}
                 rounded={theme.radius.sm}
-                style={{borderWidth: 2}}
+                style={{ borderWidth: 2 }}
               />
             </Pressable>
           </View>
@@ -109,22 +163,22 @@ const Home = () => {
           }}
 
           onEndReachedThreshold={0}
-          renderItem={({item}) => <PostCard
-                                        item = {item}
-                                        currentUser = {user}
-                                        router = {router}
-                                        />
-        }
-        ListFooterComponent={hasMore ? (
-          <View style = {{marginVertical: posts.length == 0 ? 200 : 30 }}> 
+          renderItem={({ item }) => <PostCard
+            item={item}
+            currentUser={user}
+            router={router}
+          />
+          }
+          ListFooterComponent={hasMore ? (
+            <View style={{ marginVertical: posts.length == 0 ? 100 : 30 }}>
               <Loading />
-          </View>
-        ) : (
-          <View style={{marginVertical: 30}}>
+            </View>
+          ) : (
+            <View style={{ marginVertical: 30 }}>
               <Text style={styles.noPosts}>You're all caught up!</Text>
-          </View>
-        ) }    
-        /> 
+            </View>
+          )}
+        />
 
       </View>
       {/* <Button title='Logout' onPress={
@@ -137,54 +191,54 @@ const Home = () => {
 export default Home
 
 const styles = StyleSheet.create({
-  container : {
+  container: {
     flex: 1
   },
 
   header: {
     flexDirection: 'row',
-    alignItems : 'center',
-    justifyContent : 'space-between',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 10,
-    marginHorizontal : wp(4)
+    marginHorizontal: wp(4)
   },
 
-  title : {
-    color : theme.colors.text,
+  title: {
+    color: theme.colors.text,
     fontSize: hp(3.2),
     fontWeight: theme.fonts.bold
   },
 
   avatarImage: {
-    height : hp(4.3),
-    width : hp(4.3),
-    borderRadius : theme.radius.sm,
-    borderCurve : 'continuous',
-    borderColor : theme.colors.gray,
-    borderWidth : 3
+    height: hp(4.3),
+    width: hp(4.3),
+    borderRadius: theme.radius.sm,
+    borderCurve: 'continuous',
+    borderColor: theme.colors.gray,
+    borderWidth: 3
   },
 
   icons: {
-    flexDirection : 'row',
-    justifyContent : 'center',
-    alignItems : 'center',
-    gap:18, 
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 18,
   },
 
-  listStyle : {
-    paddingTop : 20,
-    paddingHorizontal : wp(4)
+  listStyle: {
+    paddingTop: 20,
+    paddingHorizontal: wp(4)
   },
 
-  noPosts : {
-    fontSize : hp(2),
-    textAlign : 'center',
-    color : theme.colors.text
+  noPosts: {
+    fontSize: hp(2),
+    textAlign: 'center',
+    color: theme.colors.text
   },
 
-  center : {
-    flex : 1,
-    alignItems : 'center',
-    justifyContent : 'center',
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

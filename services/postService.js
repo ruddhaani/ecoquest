@@ -31,27 +31,42 @@ export const createOrUpdatePost = async (post) => {
     }
 }
 
-export const fetchPosts = async (limit=10) => {
+export const fetchPosts = async (limit = 10, userId) => {
     try {
-       const {data, error} = await supabase
-       .from('posts')
-       .select(`
-            *,
-            user: users (id , name , image),
-            postLikes (*),
-            comments (count)
-        `)
-       .order('created_at' , {ascending: false})
-       .limit(limit);
-
-       if(error){
-        return {success : false , msg : 'Could not fetch the posts!'};            
-       }
-       return {success : true , data : data};
+      console.log(`Fetching posts for user: ${userId} with limit: ${limit}`);
+  
+      let query = supabase
+        .from("posts")
+        .select(
+          `
+           *,
+           user: users (id, name, image),
+           postLikes (*),
+           comments (count)
+         `
+        )
+        .order("created_at", { ascending: false })
+        .limit(limit);
+  
+      if (userId) {
+        query = query.eq("userId", userId);
+      }
+  
+      const { data, error } = await query;
+      console.log("Fetched data:", data);
+  
+      if (error) {
+        console.error("Fetch error:", error);
+        return { success: false, msg: "Could not fetch the posts!" };
+      }
+  
+      return { success: true, data };
     } catch (error) {
-        return {success : false , msg : 'Could not fetch the posts!'};
+      console.error("Catch block error:", error);
+      return { success: false, msg: "Could not fetch the posts!" };
     }
-}
+  };
+  
 
 export const fetchSinglePost = async (postId) => {
     try {
@@ -109,6 +124,23 @@ export const removePostLike = async (postId , userId) => {
        return {success : true};
     } catch (error) {
         return {success : false , msg : 'Could not remove the post like!'};
+    }
+}
+
+export const removePost = async (postId) => {
+    try {
+       
+       const {error} = await supabase
+       .from('posts')
+       .delete()
+       .eq('id' , postId);
+
+       if(error){
+        return {success : false , msg : 'Could not remove the post!'};            
+       }
+       return {success : true};
+    } catch (error) {
+        return {success : false , msg : 'Could not remove the post!'};
     }
 }
 

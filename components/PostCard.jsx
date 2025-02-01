@@ -12,7 +12,7 @@ import { downloadFile, getSupabaseFileUri } from '../services/imageService'
 import { createPostLike, removePostLike } from '../services/postService'
 import Loading from '../components/Loading'
 
-const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = true }) => {
+const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = true, showDelete = false, onDelete = () => { }, onEdit = () => { } }) => {
 
     useEffect(() => {
         setLikes(item?.postLikes);
@@ -52,7 +52,7 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
     const [loading, setLoading] = useState(false);
 
     const openPostDetails = () => {
-        if(!showMoreIcon){
+        if (!showMoreIcon) {
             return null;
         }
         router.push({
@@ -107,6 +107,21 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
         Share.share(content);
     }
 
+    const handlePostDelete = () => {
+        Alert.alert('Confirm', "Are you sure you want to delete the comment?", [
+            {
+                text: 'Cancel',
+                onPress: () => console.log('cancelled'),
+                style: 'cancel'
+            },
+            {
+                text: 'Delete',
+                onPress: () => onDelete(item),
+                style: 'destructive'
+            }
+        ])
+    }
+
     return (
         <View style={[styles.container, hasShadow && shadowStyles]}>
             <View style={styles.header}>
@@ -130,6 +145,20 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
                         <TouchableOpacity onPress={openPostDetails}>
                             <Icon name="threeDotsHorizontal" size={hp(3.4)} strokeWidth={3} color={theme.colors.text} />
                         </TouchableOpacity>
+                    )
+                }
+
+                {
+                    showDelete && currentUser.id == item?.userId && (
+                        <View style={styles.actions}>
+                            <TouchableOpacity onPress={() => onEdit(item)}>
+                                <Icon name="edit" size={hp(2.5)} color={theme.colors.text} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={handlePostDelete}>
+                                <Icon name="delete" size={hp(2.5)} color={theme.colors.rose} />
+                            </TouchableOpacity>
+                        </View>
                     )
                 }
 
