@@ -13,10 +13,19 @@ export const getUserImageSource = imagePath => {
 
 export const downloadFile = async (url) => {
     try {
-        const {uri} = await FileSystem.downloadAsync(url , getLocalFilePath(url));
+        console.log('Downloading file from:', url);
+        const { uri } = await FileSystem.downloadAsync(url, getLocalFilePath(url));
+        console.log('Downloaded file saved at:', uri);
+        return uri;
     } catch (error) {
+        console.error('File download error:', error);
         return null;
     }
+};
+
+export const getLocalFilePath = filepath => {
+    let fileName = filepath.split('/').pop();
+    return `${FileSystem.documentDirectory}${fileName}`;
 }
 
 export const getSupabaseFileUri = filepath => {

@@ -39,11 +39,7 @@ const MainLayout = () => {
           if(res.success) setUserData({...res.data , email});
       }
   return (
-    <Stack 
-        screenOptions={{
-            headerShown: false
-        }}
-    />
+    <Stack screenOptions={{ headerShown: false }} />
   )
 }
 

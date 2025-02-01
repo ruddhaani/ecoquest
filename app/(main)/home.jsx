@@ -31,7 +31,7 @@ const Home = () => {
       .on('postgres_changes' , {event: '*' , schema: 'public' , table: 'posts'}, (payload) => {handlePostEvent(payload);})
       .subscribe();
 
-      // getPosts();
+      getPosts();
 
       return () => {
         supabase.removeChannel(postChannel);
@@ -44,11 +44,12 @@ const Home = () => {
 
     const [posts , setPosts] = useState([]);
     const [hasMore , setHasMore] = useState(true);
+    const [startLoading , setStartLoading] = useState(false);
 
     const getPosts = async () => {
         if(!hasMore) return null;
 
-        limit += 4; 
+        limit += 4;
         let res = await fetchPosts();
         
         if(res.success){
@@ -179,5 +180,11 @@ const styles = StyleSheet.create({
     fontSize : hp(2),
     textAlign : 'center',
     color : theme.colors.text
-  }
+  },
+
+  center : {
+    flex : 1,
+    alignItems : 'center',
+    justifyContent : 'center',
+  },
 })
