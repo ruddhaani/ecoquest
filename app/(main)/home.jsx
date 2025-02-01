@@ -13,7 +13,7 @@ const Home = () => {
     const {user , setAuth} = useAuth();
     const router = useRouter();
 
-    console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
+    // console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
     // const onLogout = async () => {
     //     // setAuth(null);
 
