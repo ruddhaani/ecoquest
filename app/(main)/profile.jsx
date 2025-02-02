@@ -16,9 +16,82 @@ import PostCard from '../../components/PostCard'
 var limit = 0
 const Profile = () => {
 
-  useEffect(() => {
-    getPosts()
-  } , []);
+  const handlePostEvent = async (payload) => {
+      if (payload.eventType === "INSERT" && payload?.new?.id) {
+        let newPost = { ...payload.new };
+        let res = await getUserData(newPost.userId);
+        newPost.postLikes = [];
+        newPost.comments = [{ count: 0 }];
+        newPost.user = res.success ? res.data : {};
+        setPosts((prevPosts) => [newPost, ...prevPosts]);
+      }
+  
+      if (payload.eventType === "DELETE" && payload.old.id) {
+        setPosts(prevPosts => {
+          let updatedPosts = prevPosts.filter(post => post.id != payload.old.id);
+          return updatedPosts;
+        })
+      }
+  
+      if (payload.eventType === "UPDATE" && payload?.new?.id) {
+        setPosts(prevPosts => {
+          let updatedPosts = prevPosts.map(post => {
+            if (post.id == payload.new.id) {
+              post.body = payload.new.body;
+              post.file = payload.new.file;
+            }
+  
+            return post;
+          });
+  
+          return updatedPosts;
+        });
+      }
+    };
+  
+    const handleCommentEvent = (payload) => {
+      if (payload.eventType === "DELETE") {
+        getPosts();
+      } else {
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === (payload.eventType === "INSERT" ? payload.new.postId : payload.old?.postId)
+              ? {
+                ...post,
+                comments: [{ count: post.comments[0].count + (payload.eventType === "INSERT" ? 1 : -1) }],
+              }
+              : post
+          )
+        );
+      }
+    };
+    useEffect(() => {
+      let postChannel = supabase
+        .channel('posts')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'posts' },
+          (payload) => handlePostEvent(payload)
+        )
+        .subscribe();
+  
+      let commentChannel = supabase
+        .channel('comments')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'comments' },
+          (payload) => handleCommentEvent(payload)
+        )
+        .subscribe();
+  
+      getPosts();
+  
+      return () => {
+        supabase.removeChannel(postChannel);
+        supabase.removeChannel(commentChannel);
+      };
+    }, []);
+  
 
   const { user, setAuth } = useAuth();
   const router = useRouter();

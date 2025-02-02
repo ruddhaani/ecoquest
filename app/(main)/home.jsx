@@ -65,6 +65,13 @@ const Home = () => {
       );
     }
   };
+
+  const handleNewNotification = async (payload) => {
+    if(payload.eventType == 'INSERT' && payload.new.id){
+      setNotificationCount(prev => prev + 1);
+    }
+  };
+
   useEffect(() => {
     let postChannel = supabase
       .channel('posts')
@@ -86,15 +93,26 @@ const Home = () => {
 
     getPosts();
 
+    let notificationChannel = supabase
+    .channel('notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications' , filter: `receiverId=eq.${user.id}`},
+        (payload) => handleNewNotification(payload)
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(postChannel);
       supabase.removeChannel(commentChannel);
+      supabase.removeChannel(notificationChannel);
     };
   }, []);
 
 
   const { user, setAuth } = useAuth();
   const router = useRouter();
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const [posts, setPosts] = useState([]);
   const [hasMore, setHasMore] = useState(true);
@@ -132,8 +150,22 @@ const Home = () => {
         <View style={styles.header}>
           <Text style={[styles.title , {color : theme.colors.primaryDark}]} >EcoQuest</Text>
           <View style={styles.icons}>
-            <Pressable onPress={() => router.push('notifications')}>
+            <Pressable onPress={() => {
+              setNotificationCount(0);
+              router.push('notifications');
+              }}>
               <Icon name="heart" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
+              {
+                notificationCount > 0 && (
+                  <View style={styles.pill}>
+                    <Text style = {styles.pillText}>
+                      {
+                        notificationCount
+                      }
+                    </Text>
+                  </View>
+                )
+              }
             </Pressable>
 
             <Pressable onPress={() => router.push('newPost')}>
@@ -241,4 +273,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  pill : {
+    position : 'absolute',
+    right : -10,
+    top : -4,
+    height : hp(2.2),
+    width : hp(2.2),
+    justifyContent : 'center',
+    alignItems : 'center',
+    borderRadius : 20,
+    backgroundColor : theme.colors.primaryDark
+  },
+
+  pillText : {
+    color : 'white',
+    fontSize : hp(1.2),
+    fontWeight : theme.fonts.bold
+  }
 })

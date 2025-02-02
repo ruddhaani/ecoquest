@@ -16,7 +16,7 @@ import { supabase } from '../../lib/supabase'
 import { createNotification } from '../../services/notificationService'
 
 const PostDetails = () => {
-  const { postId } = useLocalSearchParams();
+  const { postId , commentId } = useLocalSearchParams();
   console.log('postId', postId);
   const { user } = useAuth();
   const router = useRouter();
@@ -206,6 +206,7 @@ const PostDetails = () => {
                 canDelete = {user.id == comment.userId || user.id == post.userId}
                 onDelete = {onDeleteComment}
                 item = {comment}
+                highlight = {comment.id == commentId}
                 key={comment?.id.toString()}
               />
             )
