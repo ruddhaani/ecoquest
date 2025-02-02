@@ -1,3 +1,0 @@
-export const supabaseUrl = "https://qwanexiolnpjzufgocnw.supabase.co";
-
-export const AnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3YW5leGlvbG5wanp1ZmdvY253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMDQzODMsImV4cCI6MjA1Mzg4MDM4M30.-CxElaIDt0tMlpn-9Jp8_oQn1CueHeG6aGExjbYHPgQ"
