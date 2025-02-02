@@ -160,7 +160,7 @@ const PostDetails = () => {
     )
   }
   return (
-    <View style={styles.container}>
+    <ScreenWrapper bg='white' style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
         <PostCard
           item={{...post , comments : [{count: post?.comments?.length}]}}
@@ -221,7 +221,7 @@ const PostDetails = () => {
           }
         </View>
       </ScrollView>
-    </View>
+    </ScreenWrapper>
   )
 }
 

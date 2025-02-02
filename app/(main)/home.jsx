@@ -16,6 +16,28 @@ import { getUserData } from '../../services/userServices'
 var limit = 0;
 
 const Home = () => {
+  const { user, setAuth } = useAuth();
+  const router = useRouter();
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  const [posts, setPosts] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [startLoading, setStartLoading] = useState(false);
+
+  const getPosts = async () => {
+    if (!hasMore) return null;
+
+    limit += 4;
+    let res = await fetchPosts(limit);
+
+    if (res.success) {
+      if (posts.length == res.data.length) {
+        setHasMore(false);
+      }
+      setPosts(res.data);
+    }
+  }
+
   const handlePostEvent = async (payload) => {
     if (payload.eventType === "INSERT" && payload?.new?.id) {
       let newPost = { ...payload.new };
@@ -67,12 +89,14 @@ const Home = () => {
   };
 
   const handleNewNotification = async (payload) => {
-    if(payload.eventType == 'INSERT' && payload.new.id){
+    if (payload.eventType === 'INSERT' && payload.new.id) {
+      console.log('New notification received:', payload.new);
       setNotificationCount(prev => prev + 1);
     }
   };
 
   useEffect(() => {
+    
     let postChannel = supabase
       .channel('posts')
       .on(
@@ -91,16 +115,18 @@ const Home = () => {
       )
       .subscribe();
 
-    getPosts();
-
     let notificationChannel = supabase
-    .channel('notifications')
+      .channel('notifications')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'notifications' , filter: `receiverId=eq.${user.id}`},
+        { event: '*', schema: 'public', table: 'notifications', filter: `receiverId=eq.${user.id}` },
         (payload) => handleNewNotification(payload)
       )
       .subscribe();
+
+    getPosts();
+
+
 
     return () => {
       supabase.removeChannel(postChannel);
@@ -108,29 +134,6 @@ const Home = () => {
       supabase.removeChannel(notificationChannel);
     };
   }, []);
-
-
-  const { user, setAuth } = useAuth();
-  const router = useRouter();
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  const [posts, setPosts] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [startLoading, setStartLoading] = useState(false);
-
-  const getPosts = async () => {
-    if (!hasMore) return null;
-
-    limit += 4;
-    let res = await fetchPosts(limit);
-
-    if (res.success) {
-      if (posts.length == res.data.length) {
-        setHasMore(false);
-      }
-      setPosts(res.data);
-    }
-  }
 
   // console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
   // const onLogout = async () => {
@@ -148,17 +151,17 @@ const Home = () => {
         {/* Header */}
 
         <View style={styles.header}>
-          <Text style={[styles.title , {color : theme.colors.primaryDark}]} >EcoQuest</Text>
+          <Text style={[styles.title, { color: theme.colors.primaryDark }]} >EcoQuest</Text>
           <View style={styles.icons}>
             <Pressable onPress={() => {
               setNotificationCount(0);
               router.push('notifications');
-              }}>
+            }}>
               <Icon name="heart" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
               {
                 notificationCount > 0 && (
                   <View style={styles.pill}>
-                    <Text style = {styles.pillText}>
+                    <Text style={styles.pillText}>
                       {
                         notificationCount
                       }
@@ -274,21 +277,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  pill : {
-    position : 'absolute',
-    right : -10,
-    top : -4,
-    height : hp(2.2),
-    width : hp(2.2),
-    justifyContent : 'center',
-    alignItems : 'center',
-    borderRadius : 20,
-    backgroundColor : theme.colors.primaryDark
+  pill: {
+    position: 'absolute',
+    right: -10,
+    top: -4,
+    height: hp(2.2),
+    width: hp(2.2),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: theme.colors.primaryDark
   },
 
-  pillText : {
-    color : 'white',
-    fontSize : hp(1.2),
-    fontWeight : theme.fonts.bold
+  pillText: {
+    color: 'white',
+    fontSize: hp(1.2),
+    fontWeight: theme.fonts.bold
   }
 })
