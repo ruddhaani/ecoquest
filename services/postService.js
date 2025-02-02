@@ -34,7 +34,7 @@ export const createOrUpdatePost = async (post) => {
 
 export const fetchPosts = async (limit = 10, userId) => {
     try {
-      console.log(`Fetching posts for user: ${userId} with limit: ${limit}`);
+    //   console.log(`Fetching posts for user: ${userId} with limit: ${limit}`);
   
       let query = supabase
         .from("posts")
@@ -54,7 +54,7 @@ export const fetchPosts = async (limit = 10, userId) => {
       }
   
       const { data, error } = await query;
-      console.log("Fetched data:", data);
+    //   console.log("Fetched data:", data);
   
       if (error) {
         console.error("Fetch error:", error);

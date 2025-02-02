@@ -15,6 +15,7 @@ import { Image } from 'react-native'
 import { getSupabaseFileUri } from '../../services/imageService'
 import { createOrUpdatePost } from '../../services/postService'
 import { Video } from 'expo-av'
+import { getDailyPostDetail } from '../../services/goalService'
 
 const NewPost = () => {
   const post = useLocalSearchParams();
@@ -24,8 +25,24 @@ const NewPost = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(file);
+  const [goal, setGoal] = useState(null);
+
+  const fetchData = async () => {
+    const result = await getDailyPostDetail();
+    // console.log('goal details:', result);  Now correctly logs the resolved data
+    if (result.success) {
+      setGoal(result.data);
+    }
+  }
+
 
   useEffect(() => {
+
+
+    fetchData();
+
+
+
     if (post && post.id) {
       bodyRef.current = post.body;
       setFile(post.file || null);
@@ -115,8 +132,15 @@ const NewPost = () => {
   return (
     <ScreenWrapper bg='white'>
       <View style={styles.container}>
-        <Header title="Create Post" />
+        <Header title="Daily Goal" />
         <ScrollView contentContainerStyle={{ gap: 20 }}>
+          <View style={styles.goal}>
+            <Text style={styles.goalText}>
+              {
+                goal?.goals?.title
+              }
+            </Text>
+          </View>
           {/* avatar */}
           <View style={styles.header}>
             <Avatar
@@ -146,8 +170,8 @@ const NewPost = () => {
               <View style={styles.file}>
                 {
                   getFileType(file) == 'video' ? (
-                    <Video 
-                      style = {{flex : 1}}
+                    <Video
+                      style={{ flex: 1 }}
                       source={{
                         uri: getFileUri(file)
                       }}
@@ -170,13 +194,24 @@ const NewPost = () => {
           <View style={styles.media}>
             <Text style={styles.addImageText}>Add to your post</Text>
             <View style={styles.mediaIcons}>
-              <TouchableOpacity onPress={() => onPick(true)}>
-                <Icon name="image" size={30} color={theme.colors.dark} />
-              </TouchableOpacity>
+              {
+                goal?.goals?.type == 'image' && (
+                  <TouchableOpacity onPress={() => onPick(true)}>
+                    <Icon name="image" size={30} color={theme.colors.dark} />
+                  </TouchableOpacity>
+                )
+              }
 
-              <TouchableOpacity onPress={() => onPick(false)}>
-                <Icon name="video" size={30} color={theme.colors.dark} />
-              </TouchableOpacity>
+              {
+                goal?.goals?.type == 'video' && (
+                  <TouchableOpacity onPress={() => onPick(false)}>
+                    <Icon name="video" size={30} color={theme.colors.dark} />
+                  </TouchableOpacity>
+                )
+              }
+
+
+
             </View>
           </View>
         </ScrollView>
@@ -191,6 +226,16 @@ const NewPost = () => {
 export default NewPost
 
 const styles = StyleSheet.create({
+  goal: {
+    paddingHorizontal: wp(4),
+    margin: 10
+  },
+  goalText: {
+    textAlign: 'center',
+    fontSize: hp(2.7),
+    fontWeight: theme.fonts.medium,
+    color: theme.colors.primaryDark,
+  },
   imageIcon: {
     borderRadius: theme.radius.md
   },
