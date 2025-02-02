@@ -128,7 +128,7 @@ const UserHeader = ({ user, router, handleLogout }) => (
 
         {/* Bio */}
         <View style={{ gap: 10 }}>
-          <View style={styles.info}>
+          <View style={[styles.info , {justifyContent: 'center'}]}>
             <Icon name="mail" size={20} color={theme.colors.textLight} />
             <Text style={styles.infoText}>
               {user && user.email}
@@ -137,7 +137,7 @@ const UserHeader = ({ user, router, handleLogout }) => (
 
           {
             user && user.phoneNumber && (
-              <View style={styles.info}>
+              <View style={[styles.info , {justifyContent: 'center'}]}>
                 <Icon name="call" size={20} color={theme.colors.textLight} />
                 <Text style={styles.infoText}>
                   {user.phoneNumber}
@@ -148,7 +148,7 @@ const UserHeader = ({ user, router, handleLogout }) => (
 
           {
             user && user.bio && (
-              <Text style={styles.infoText}>
+              <Text style={[styles.info , {textAlign: 'center'}]}>
                 {user.bio}
               </Text>
             )
