@@ -11,6 +11,7 @@ import { Image } from 'expo-image'
 import { downloadFile, getSupabaseFileUri } from '../services/imageService'
 import { createPostLike, removePostLike } from '../services/postService'
 import Loading from '../components/Loading'
+import { Video } from 'expo-av'
 
 const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = true, showDelete = false, onDelete = () => { }, onEdit = () => { } }) => {
 
@@ -188,6 +189,20 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
                             transition={100}
                             style={styles.postMedia}
                             contentFit='cover'
+                        />
+                    )
+                }
+
+                {/* post Video */}
+
+                {
+                    item?.file && item?.file?.includes('postVideos') && (
+                        <Video 
+                            style = {[styles.postMedia , {height : hp(30)}]}
+                            source={getSupabaseFileUri(item?.file)}
+                            useNativeControls
+                            resizeMode='cover'
+                            isLooping
                         />
                     )
                 }
