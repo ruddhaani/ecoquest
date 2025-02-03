@@ -27,7 +27,7 @@ const Home = () => {
   const getPosts = async () => {
     if (!hasMore) return null;
 
-    limit += 4;
+    limit += 2;
     let res = await fetchPosts(limit);
 
     if (res.success) {
@@ -197,7 +197,7 @@ const Home = () => {
             getPosts();
           }}
 
-          onEndReachedThreshold={0}
+          onEndReachedThreshold={0.5}
           renderItem={({ item }) => <PostCard
             item={item}
             currentUser={user}
