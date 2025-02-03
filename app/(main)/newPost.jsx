@@ -28,6 +28,8 @@ const NewPost = () => {
   const [goal, setGoal] = useState(null);
   const [goalCompleted, setGoalCompleted] = useState(false);
 
+  console.log(goal);
+
   const fetchData = async () => {
       // Ensure loading starts
     const result = await getDailyPostDetail();
