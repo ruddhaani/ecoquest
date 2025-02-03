@@ -1,22 +1,20 @@
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React, { useEffect, useRef, useState } from 'react'
-import ScreenWrapper from '../../components/ScreenWrapper'
-import Header from '../../components/Header'
-import { theme } from '../../constants/theme'
-import { hp, wp } from '../../helpers/common'
-import { useAuth } from '../../contexts/AuthContext'
-import Avatar from '../../components/Avatar'
-import RichTextEditor from '../../components/RichTextEditor'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import Icon from '../../assets/icons'
-import Button from '../../components/Button'
-import * as ImagePicker from 'expo-image-picker'
-import { Image } from 'react-native'
-import { getSupabaseFileUri } from '../../services/imageService'
-import { createOrUpdatePost } from '../../services/postService'
-import { Video } from 'expo-av'
-import { createOrUpdateGoal, getDailyPostDetail, getGoalCompletionDetails } from '../../services/goalService'
-import Loading from '../../components/Loading'
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import ScreenWrapper from '../../components/ScreenWrapper';
+import Header from '../../components/Header';
+import { theme } from '../../constants/theme';
+import { hp, wp } from '../../helpers/common';
+import { useAuth } from '../../contexts/AuthContext';
+import Avatar from '../../components/Avatar';
+import RichTextEditor from '../../components/RichTextEditor';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Icon from '../../assets/icons';
+import Button from '../../components/Button';
+import * as ImagePicker from 'expo-image-picker';
+import { getSupabaseFileUri } from '../../services/imageService';
+import { createOrUpdatePost } from '../../services/postService';
+import { Video } from 'expo-av';
+import { createOrUpdateGoal, getDailyPostDetail, getGoalCompletionDetails } from '../../services/goalService';
 
 const NewPost = () => {
   const post = useLocalSearchParams();
@@ -25,149 +23,65 @@ const NewPost = () => {
   const editorRef = useRef(null);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [file, setFile] = useState(file);
+  const [file, setFile] = useState(null);
   const [goal, setGoal] = useState(null);
   const [goalCompleted, setGoalCompleted] = useState(false);
-  const [startLoading, setStartLoading] = useState(true);
 
-  console.log('Post params' , post);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  console.log(goal);
+
+  useEffect(() => {
+    if (goal?.goalid) {
+      fetchCompletion();
+    }
+  }, [goal?.goalid]);
+
   const fetchData = async () => {
-    setStartLoading(true);  // Ensure loading starts
     const result = await getDailyPostDetail();
     if (result.success) {
       setGoal(result.data);
     }
-    setStartLoading(false); // Stop loading after data is set
   };
 
-  const fetchCompletion = async () => {
-    if (!user?.id || !goal?.goalid) {
-      console.warn("User ID or Goal ID is undefined. Skipping fetchCompletion.");
-      return;
-    }
-
-    setStartLoading(true);
+  const fetchCompletion = useCallback(async () => {
+    if (!user?.id || !goal?.goalid) return;
     const result = await getGoalCompletionDetails(user.id, goal.goalid);
-    setStartLoading(false);
+    setGoalCompleted(result.success);
+  }, [user?.id, goal?.goalid]);
 
-    if (!result.success) {
-      setGoalCompleted(false);
-      console.log('updated as false');
-    } else {
-      setGoalCompleted(true);
-      console.log('updated as true');
-    }
-  };
-
-  setTimeout(() => {
-    setStartLoading(false);
-  }, 3000);
-
-  useEffect(() => {
-    if (goal) {
-      fetchCompletion();
-    }
-  }, [goal]);
-
-  useEffect(() => {
-    fetchData();
-    if (post && post.id) {
-      bodyRef.current = post.body;
-      setFile(post.file || null);
-      setTimeout(() => {
-        editorRef?.current.setContentHTML(post.body);
-      }, 300);
-    }
-  }, [])
-
-  const onPick = async (isImage) => {
-
+  const onPick = useCallback(async (isImage) => {
     let mediaconfig = {
-      mediaTypes: ['images'],
+      mediaTypes: isImage ? ['images'] : ['videos'],
       allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.7,
-    }
-    if (!isImage) {
-      mediaconfig = {
-        mediaTypes: ['videos'],
-        allowsEditing: true
-      }
-    }
-
+    };
     let result = await ImagePicker.launchImageLibraryAsync(mediaconfig);
-
     if (!result.canceled) {
       setFile(result.assets[0]);
     }
-  }
+  }, []);
 
-  const isLocalFile = file => {
-    if (!file) return null;
-    if (typeof file == 'object') return true;
-
-    return false;
-  }
-
-  const getFileUri = file => {
-    if (!file) return null;
-    if (isLocalFile(file)) {
-      return file.uri;
-    }
-
-    return getSupabaseFileUri(file)?.uri;
-  }
-
-  const getFileType = file => {
-    if (!file) return null;
-    if (isLocalFile(file)) {
-      return file.type;
-    }
-
-    if (file.includes('postImage')) {
-      return 'image';
-    }
-
-    return 'video';
-  }
+  const fileUri = useMemo(() => (file ? getFileUri(file) : null), [file]);
+  const fileType = useMemo(() => (file ? getFileType(file) : null), [file]);
+  const isLocal = useMemo(() => (file ? isLocalFile(file) : null), [file]);
 
   const onSubmit = async () => {
     if (!bodyRef.current && !file) {
-      Alert.alert('Post', 'Please choose an image or   post body!');
+      Alert.alert('Post', 'Please choose an image or enter post body!');
+      return;
     }
-
-    let data = {
-      file,
-      body: bodyRef.current,
-      userId: user?.id,
-    }
-
-
-
-    if (post && post.id) data.id = post.id;
-
-    // console.log(goal);
-
-
-    // console.log(goalData);
 
     setLoading(true);
+    let data = { file, body: bodyRef.current, userId: user?.id };
+    if (post?.id) data.id = post.id;
 
     let res = await createOrUpdatePost(data);
-    // console.log(res);
+    let goalData = { userid: user?.id, postid: res?.data.id, goalid: goal?.goalid };
+    await createOrUpdateGoal(goalData);
 
-    let goalData = {
-      userid: user?.id,
-      postid: res?.data.id,
-      goalid: goal?.goalid
-    }
-
-    // console.log(goalData);
-    let goalRes = await createOrUpdateGoal(goalData);
-
-    console.log("status", goalCompleted);
-
-    // console.log(goalRes);
     setLoading(false);
     if (res.success) {
       setFile(null);
@@ -175,11 +89,10 @@ const NewPost = () => {
       editorRef.current?.setContentHTML('');
       router.back();
     } else {
-      Alert.alert('Post', "Post couldn't be uploaded!")
+      Alert.alert('Post', "Post couldn't be uploaded!");
     }
-  }
+  };
 
-  
   if (goalCompleted && (!post || Object.keys(post).length === 0)) {
     return (
       <ScreenWrapper bg='white'>
@@ -191,104 +104,62 @@ const NewPost = () => {
           </View>
         </View>
       </ScreenWrapper>
-    )
+    );
   }
+
   return (
     <ScreenWrapper bg='white'>
       <View style={styles.container}>
         <Header title="Daily Goal" />
         <ScrollView contentContainerStyle={{ gap: 20 }}>
           <View style={styles.goal}>
-            <Text style={styles.goalText}>
-              {
-                goal?.goals?.title
-              }
-            </Text>
+            <Text style={styles.goalText}>{goal?.goals?.title}</Text>
           </View>
-          {/* avatar */}
           <View style={styles.header}>
-            <Avatar
-              uri={user?.image}
-              size={hp(6.5)}
-              rounded={theme.radius.xl} />
+            <Avatar uri={user?.image} size={hp(6.5)} rounded={theme.radius.xl} />
             <View style={{ gap: 2 }}>
-              <Text style={styles.username}>
-                {
-                  user &&
-                  user.name
-                }
-              </Text>
-
-              <Text style={styles.publicText}>
-                Public
-              </Text>
+              <Text style={styles.username}>{user?.name}</Text>
+              <Text style={styles.publicText}>Public</Text>
             </View>
           </View>
-
           <View style={styles.textEditor}>
-            <RichTextEditor editorRef={editorRef} onChange={body => bodyRef.current = body} />
+            <RichTextEditor editorRef={editorRef} onChange={body => (bodyRef.current = body)} />
           </View>
-
-          {
-            file && (
-              <View style={styles.file}>
-                {
-                  getFileType(file) == 'video' ? (
-                    <Video
-                      style={{ flex: 1 }}
-                      source={{
-                        uri: getFileUri(file)
-                      }}
-                      useNativeControls
-                      resizeMode='cover'
-                      isLooping
-                    />
-                  ) : (
-                    <Image source={{ uri: getFileUri(file) }} resizeMode='cover' style={{ flex: 1 }} />
-
-                  )
-                }
-                <Pressable style={styles.closeIcon} onPress={() => setFile(null)}>
-                  <Icon name="delete" size={22} color="white" />
-                </Pressable>
-              </View>
-            )
-          }
-
+          {file && (
+            <View style={styles.file}>
+              {fileType === 'video' ? (
+                <Video style={{ flex: 1 }} source={{ uri: fileUri }} useNativeControls resizeMode='cover' isLooping />
+              ) : (
+                <Image source={{ uri: fileUri }} resizeMode='cover' style={{ flex: 1 }} />
+              )}
+              <Pressable style={styles.closeIcon} onPress={() => setFile(null)}>
+                <Icon name="delete" size={22} color="white" />
+              </Pressable>
+            </View>
+          )}
           <View style={styles.media}>
             <Text style={styles.addImageText}>Add to your post</Text>
             <View style={styles.mediaIcons}>
-              {
-                goal?.goals?.type == 'image' && (
-                  <TouchableOpacity onPress={() => onPick(true)}>
-                    <Icon name="image" size={30} color={theme.colors.dark} />
-                  </TouchableOpacity>
-                )
-              }
-
-              {
-                goal?.goals?.type == 'video' && (
-                  <TouchableOpacity onPress={() => onPick(false)}>
-                    <Icon name="video" size={30} color={theme.colors.dark} />
-                  </TouchableOpacity>
-                )
-              }
-
-
-
+              {goal?.goals?.type === 'image' && (
+                <TouchableOpacity onPress={() => onPick(true)}>
+                  <Icon name="image" size={30} color={theme.colors.dark} />
+                </TouchableOpacity>
+              )}
+              {goal?.goals?.type === 'video' && (
+                <TouchableOpacity onPress={() => onPick(false)}>
+                  <Icon name="video" size={30} color={theme.colors.dark} />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </ScrollView>
-
-        <Button title={post && post.id ? "Update" : "Post"} buttonStyle={{ height: hp(6.2) }} loading={loading} onPress={onSubmit} />
+        <Button title={post?.id ? "Update" : "Post"} buttonStyle={{ height: hp(6.2) }} loading={loading} onPress={onSubmit} />
       </View>
-
     </ScreenWrapper>
-  )
-}
+  );
+};
 
-
-export default NewPost
+export default NewPost;
 
 const styles = StyleSheet.create({
   completedMsgContainer: {

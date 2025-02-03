@@ -1,8 +1,8 @@
 import { supabase } from "../lib/supabase";
 
 export const getDailyPostDetail = async () => {
-    const today = new Date().toLocaleDateString().split('T'); // YYYY-MM-DD format
-    // console.log(today); 
+    const today = new Date().toISOString().split('T'); // YYYY-MM-DD format
+    console.log(today); 
 
     const { data, error } = await supabase
         .from('goal_schedule')
