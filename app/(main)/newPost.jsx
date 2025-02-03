@@ -30,6 +30,7 @@ const NewPost = () => {
   const [goalCompleted, setGoalCompleted] = useState(false);
   const [startLoading, setStartLoading] = useState(true);
 
+  console.log('Post params' , post);
   const fetchData = async () => {
     setStartLoading(true);  // Ensure loading starts
     const result = await getDailyPostDetail();
@@ -179,7 +180,7 @@ const NewPost = () => {
   }
 
   
-  if (goalCompleted) {
+  if (goalCompleted && (!post || Object.keys(post).length === 0)) {
     return (
       <ScreenWrapper bg='white'>
         <View style={styles.container}>
