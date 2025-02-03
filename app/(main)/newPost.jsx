@@ -184,9 +184,9 @@ const NewPost = () => {
     return (
       <ScreenWrapper bg='white'>
         <View style={styles.container}>
-          <Header title="Daily Goal" />
+          <Header title="Daily Challenge" />
           <View style={styles.completedMsgContainer}>
-            <Text style={styles.completedMsg}>The goal is</Text>
+            <Text style={styles.completedMsg}>The challenge is</Text>
             <Text style={[styles.completedMsg, { color: theme.colors.primary }]}>completed!</Text>
           </View>
         </View>
