@@ -15,7 +15,8 @@ import { Image } from 'react-native'
 import { getSupabaseFileUri } from '../../services/imageService'
 import { createOrUpdatePost } from '../../services/postService'
 import { Video } from 'expo-av'
-import { getDailyPostDetail } from '../../services/goalService'
+import { createOrUpdateGoal, getDailyPostDetail, getGoalCompletionDetails } from '../../services/goalService'
+import Loading from '../../components/Loading'
 
 const NewPost = () => {
   const post = useLocalSearchParams();
@@ -26,23 +27,49 @@ const NewPost = () => {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(file);
   const [goal, setGoal] = useState(null);
+  const [goalCompleted, setGoalCompleted] = useState(false);
+  const [startLoading, setStartLoading] = useState(true);
 
   const fetchData = async () => {
+    setStartLoading(true);  // Ensure loading starts
     const result = await getDailyPostDetail();
-    // console.log('goal details:', result);  Now correctly logs the resolved data
     if (result.success) {
       setGoal(result.data);
     }
-  }
+    setStartLoading(false); // Stop loading after data is set
+  };
 
+  const fetchCompletion = async () => {
+    if (!user?.id || !goal?.goalid) {
+      console.warn("User ID or Goal ID is undefined. Skipping fetchCompletion.");
+      return;
+    }
+
+    setStartLoading(true);
+    const result = await getGoalCompletionDetails(user.id, goal.goalid);
+    setStartLoading(false);
+
+    if (!result.success) {
+      setGoalCompleted(false);
+      console.log('updated as false');
+    } else {
+      setGoalCompleted(true);
+      console.log('updated as true');
+    }
+  };
+
+  setTimeout(() => {
+    setStartLoading(false);
+  }, 3000);
 
   useEffect(() => {
+    if (goal) {
+      fetchCompletion();
+    }
+  }, [goal]);
 
-
+  useEffect(() => {
     fetchData();
-
-
-
     if (post && post.id) {
       bodyRef.current = post.body;
       setFile(post.file || null);
@@ -114,11 +141,32 @@ const NewPost = () => {
       userId: user?.id,
     }
 
+
+
     if (post && post.id) data.id = post.id;
+
+    // console.log(goal);
+
+
+    // console.log(goalData);
 
     setLoading(true);
 
     let res = await createOrUpdatePost(data);
+    // console.log(res);
+
+    let goalData = {
+      userid: user?.id,
+      postid: res?.data.id,
+      goalid: goal?.goalid
+    }
+
+    // console.log(goalData);
+    let goalRes = await createOrUpdateGoal(goalData);
+
+    console.log("status", goalCompleted);
+
+    // console.log(goalRes);
     setLoading(false);
     if (res.success) {
       setFile(null);
@@ -128,6 +176,21 @@ const NewPost = () => {
     } else {
       Alert.alert('Post', "Post couldn't be uploaded!")
     }
+  }
+
+  
+  if (goalCompleted) {
+    return (
+      <ScreenWrapper bg='white'>
+        <View style={styles.container}>
+          <Header title="Daily Goal" />
+          <View style={styles.completedMsgContainer}>
+            <Text style={styles.completedMsg}>The goal is</Text>
+            <Text style={[styles.completedMsg, { color: theme.colors.primary }]}>completed!</Text>
+          </View>
+        </View>
+      </ScreenWrapper>
+    )
   }
   return (
     <ScreenWrapper bg='white'>
@@ -223,9 +286,22 @@ const NewPost = () => {
   )
 }
 
+
 export default NewPost
 
 const styles = StyleSheet.create({
+  completedMsgContainer: {
+    flexDirection: 'row',
+    gap: 7,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  completedMsg: {
+    fontSize: hp(2.3),
+    marginTop: 10,
+    fontWeight: theme.fonts.bold,
+    color: theme.colors.text
+  },
   goal: {
     paddingHorizontal: wp(4),
     margin: 10
