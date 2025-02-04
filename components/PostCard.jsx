@@ -69,13 +69,11 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
     const onLike = async () => {
         let newLikes = [...likes];
         if (liked) {
-            console.log('clicked on like');
             newLikes = newLikes.filter(like => like.userId !== currentUser?.id);
             setLikes(newLikes);
 
             let res = await removePostLike(item?.id, currentUser?.id);
             let updateScoreRes = await updateUserScore(item?.user?.id , removeLikeScore);
-            console.log("Update Score Response:", updateScoreRes);
             if (!res.success) {
                 Alert.alert('Post', "Couldn't unlike the post!");
             }
@@ -90,8 +88,6 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
 
             let res = await createPostLike(data);
             let updateScoreRes = await updateUserScore(item?.user?.id , addLikeScore);
-            console.log("Update Score Response:", updateScoreRes);
-            console.log('like details: ' , res);
             if (!res.success) {
                 Alert.alert('Post', "Couldn't like the post!");
             }

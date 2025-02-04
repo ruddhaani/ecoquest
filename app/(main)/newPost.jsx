@@ -53,10 +53,8 @@ const NewPost = () => {
 
     if (!result.success) {
       setGoalCompleted(false);
-      console.log('updated as false');
     } else {
       setGoalCompleted(true);
-      console.log('updated as true');
     }
   };
 
@@ -175,9 +173,7 @@ const NewPost = () => {
     // console.log(goalData);
     let goalRes = await createOrUpdateGoal(goalData);
 
-    console.log("Updating score for User ID:", user?.id);
     let updateScoreRes = await updateUserScore(user?.id, addPostScore);
-    console.log("Update Score Response:", updateScoreRes);
 
     console.log("status", goalCompleted);
 
