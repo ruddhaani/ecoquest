@@ -16,6 +16,8 @@ import { getSupabaseFileUri } from '../../services/imageService'
 import { createOrUpdatePost } from '../../services/postService'
 import { Video } from 'expo-av'
 import { createOrUpdateGoal, getDailyPostDetail, getGoalCompletionDetails } from '../../services/goalService'
+import { updateUserScore } from '../../services/scoreService'
+import { addPostScore } from '../../helpers/scoreMechanism'
 
 const NewPost = () => {
   const post = useLocalSearchParams();
@@ -31,12 +33,12 @@ const NewPost = () => {
   console.log(goal);
 
   const fetchData = async () => {
-      // Ensure loading starts
+    // Ensure loading starts
     const result = await getDailyPostDetail();
     if (result.success) {
       setGoal(result.data);
     }
-     // Stop loading after data is set
+    // Stop loading after data is set
   };
 
   const fetchCompletion = async () => {
@@ -45,9 +47,9 @@ const NewPost = () => {
       return;
     }
 
-    
+
     const result = await getGoalCompletionDetails(user.id, goal.goalid);
-    
+
 
     if (!result.success) {
       setGoalCompleted(false);
@@ -76,24 +78,39 @@ const NewPost = () => {
     }
   }, [])
 
-  const onPick = async (isImage , useCamera = false) => {
-    let mediaconfig = {
+  const requestPermissions = async () => {
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
+      Alert.alert('Permission Required', 'Please grant camera and photo library permissions in settings.');
+      return false;
+    }
+    return true;
+  };
+
+  const onPick = async (isImage, useCamera = false) => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    let mediaConfig = {
       mediaTypes: isImage ? ImagePicker.MediaTypeOptions.Images : ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 0.7,
     };
-  
+
     let result;
     if (useCamera) {
-      result = await ImagePicker.launchCameraAsync(mediaconfig);
+      result = await ImagePicker.launchCameraAsync(mediaConfig);
     } else {
-      result = await ImagePicker.launchImageLibraryAsync(mediaconfig);
+      result = await ImagePicker.launchImageLibraryAsync(mediaConfig);
     }
-  
+
     if (!result.canceled) {
-      setFile(result.assets[0]);
+      setFile(result.assets[0]); // Ensure setFile is properly defined
     }
-  }
+  };
+
 
   const isLocalFile = file => {
     if (!file) return null;
@@ -158,6 +175,10 @@ const NewPost = () => {
     // console.log(goalData);
     let goalRes = await createOrUpdateGoal(goalData);
 
+    console.log("Updating score for User ID:", user?.id);
+    let updateScoreRes = await updateUserScore(user?.id, 50);
+    console.log("Update Score Response:", updateScoreRes);
+
     console.log("status", goalCompleted);
 
     // console.log(goalRes);
@@ -172,7 +193,7 @@ const NewPost = () => {
     }
   }
 
-  
+
   if (goalCompleted && (!post || Object.keys(post).length === 0)) {
     return (
       <ScreenWrapper bg='white'>
@@ -250,34 +271,34 @@ const NewPost = () => {
 
           <View style={styles.media}>
             <Text style={styles.addImageText}>Add to your post</Text>
-            
-              {
-                goal?.goals?.type == 'image' && (
-                  <View style={styles.mediaIcons}>
+
+            {
+              goal?.goals?.type == 'image' && (
+                <View style={styles.mediaIcons}>
                   <TouchableOpacity onPress={() => onPick(true)}>
                     <Icon name="image" size={30} color={theme.colors.dark} />
                   </TouchableOpacity>
 
-                  <TouchableOpacity onPress={() => onPick(true , true)}>
+                  <TouchableOpacity onPress={() => onPick(true, true)}>
                     <Icon name="camera" size={30} color={theme.colors.dark} />
                   </TouchableOpacity>
-                  </View>
-                )
-              }
+                </View>
+              )
+            }
 
-              {
-                goal?.goals?.type == 'video' && (
-                  <View style={styles.mediaIcons}>
+            {
+              goal?.goals?.type == 'video' && (
+                <View style={styles.mediaIcons}>
                   <TouchableOpacity onPress={() => onPick(false)}>
                     <Icon name="video" size={30} color={theme.colors.dark} />
                   </TouchableOpacity>
-                  </View>
-                )
-              }
+                </View>
+              )
+            }
 
 
 
-            
+
           </View>
         </ScrollView>
 

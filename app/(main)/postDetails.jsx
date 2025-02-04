@@ -14,14 +14,16 @@ import CommentItem from '../../components/CommentItem'
 import { getUserData } from '../../services/userServices'
 import { supabase } from '../../lib/supabase'
 import { createNotification } from '../../services/notificationService'
+import { removePostScore } from '../../helpers/scoreMechanism'
+import { updateUserScore } from '../../services/scoreService'
 
 const PostDetails = () => {
-  const { postId , commentId } = useLocalSearchParams();
+  const { postId, commentId } = useLocalSearchParams();
   console.log('postId', postId);
   const { user } = useAuth();
   const router = useRouter();
 
-  const [loading , setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [startLoading, setStartLoading] = useState(true);
   const [post, setPost] = useState(null);
   const inputRef = useRef(null);
@@ -31,7 +33,7 @@ const PostDetails = () => {
     try {
       let res = await getUserData(newComment.userId);
       newComment.user = res.success ? res.data : {};
-  
+
       setPost((prevPost) => ({
         ...prevPost,
         comments: [newComment, ...prevPost.comments], // Prepend new comment
@@ -46,7 +48,7 @@ const PostDetails = () => {
       .channel(`comments:${postId}`) // Use unique channel name
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public' , table: 'comments', filter: `postId=eq.${postId}` },
+        { event: 'INSERT', schema: 'public', table: 'comments', filter: `postId=eq.${postId}` },
         async (payload) => {
           console.log("New Comment Payload:", payload);
           if (payload.new) {
@@ -67,13 +69,13 @@ const PostDetails = () => {
           }
         }
       )
-      .subscribe();  
+      .subscribe();
     getPostDetails();
-  
+
     return () => {
       supabase.channel(`comments:${postId}`).unsubscribe(); // Correct way to remove the subscription
     };
-  }, [postId]); 
+  }, [postId]);
 
   const getPostDetails = async () => {
     let res = await fetchSinglePost(postId);
@@ -85,22 +87,22 @@ const PostDetails = () => {
   }
 
   const onNewComment = async () => {
-    if(!commentRef.current) return null;
+    if (!commentRef.current) return null;
     let data = {
-      userId : user?.id,
-      postId : post?.id,
-      text : commentRef.current
+      userId: user?.id,
+      postId: post?.id,
+      text: commentRef.current
     }
 
     setLoading(true);
     let res = await createComment(data);
-    if(res.success){
-      if(user.id != post.userId){
+    if (res.success) {
+      if (user.id != post.userId) {
         let notify = {
           senderId: user.id,
           receiverId: post.userId,
-          title : 'Commented on your post',
-          data : JSON.stringify({postId : post.id , commentId: res?.data?.id})
+          title: 'Commented on your post',
+          data: JSON.stringify({ postId: post.id, commentId: res?.data?.id })
         }
 
         createNotification(notify)
@@ -108,37 +110,41 @@ const PostDetails = () => {
       inputRef?.current?.clear();
       commentRef.current = "";
       setLoading(false);
-    }else{
-      Alert.alert('Comment' , res.msg);
+    } else {
+      Alert.alert('Comment', res.msg);
     }
   }
 
   const onDeletePost = async (item) => {
     //delete post here
     let res = await removePost(post.id);
-    if(res.success){
+
+    console.log("Updating score for User ID:", user?.id);
+    let updateScoreRes = await updateUserScore(post?.userId, -50);
+    console.log("Update Score Response:", updateScoreRes);
+    if (res.success) {
       router.back();
-    }else{
-      Alert.alert('Delete' , res.msg);
+    } else {
+      Alert.alert('Delete', res.msg);
     }
   }
 
   const onEditPost = async (item) => {
     router.back();
-    router.push({pathname : 'newPost' , params: {...item }})
+    router.push({ pathname: 'newPost', params: { ...item } })
   }
 
   const onDeleteComment = async (comment) => {
-    console.log('deleting comment....' , comment);
+    console.log('deleting comment....', comment);
     let res = await removeComment(comment?.id);
-    if(res.success){
-      setPost(prevPost=>{
-        let updatedPost = {...prevPost};
+    if (res.success) {
+      setPost(prevPost => {
+        let updatedPost = { ...prevPost };
         updatedPost.comments = updatedPost.comments.filter(c => c.id != comment.id);
         return updatedPost;
       })
-    }else{
-      Alert.alert('Comment' , res.msg);
+    } else {
+      Alert.alert('Comment', res.msg);
     }
   }
 
@@ -152,10 +158,10 @@ const PostDetails = () => {
     )
   }
 
-  if(!post){
+  if (!post) {
     return (
-      <View style = {[styles.center , {justifyContent : 'flex-start' , marginTop : 100}]}>
-        <Text style = {styles.notFound}>Post not found!</Text>
+      <View style={[styles.center, { justifyContent: 'flex-start', marginTop: 100 }]}>
+        <Text style={styles.notFound}>Post not found!</Text>
       </View>
     )
   }
@@ -163,14 +169,14 @@ const PostDetails = () => {
     <ScreenWrapper bg='white' style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
         <PostCard
-          item={{...post , comments : [{count: post?.comments?.length}]}}
+          item={{ ...post, comments: [{ count: post?.comments?.length }] }}
           currentUser={user}
           router={router}
           hasShadow={false}
           showMoreIcon={false}
-          showDelete= {true}
-          onDelete = {onDeletePost}
-          onEdit = {onEditPost}
+          showDelete={true}
+          onDelete={onDeletePost}
+          onEdit={onEditPost}
         />
 
         {/* comment */}
@@ -180,33 +186,33 @@ const PostDetails = () => {
             onChangeText={value => commentRef.current = value}
             inputRef={inputRef}
             placeholderTextColor={theme.colors.textLight}
-            containerStyle={{ flex: 1, height: hp(6.3), borderRadius: theme.radius.xl }} 
+            containerStyle={{ flex: 1, height: hp(6.3), borderRadius: theme.radius.xl }}
           />
 
           {
             loading ? (
-              <View style = {styles.loading}>
+              <View style={styles.loading}>
                 <Loading size='small' />
               </View>
             ) : (
               <TouchableOpacity onPress={onNewComment}>
-              <Icon name="send" color = {theme.colors.primaryDark} />
+                <Icon name="send" color={theme.colors.primaryDark} />
               </TouchableOpacity>
             )
           }
-          
+
         </View>
 
         {/* Comment List */}
 
-        <View style = {{marginVertical : 15 , gap: 17}}>
+        <View style={{ marginVertical: 15, gap: 17 }}>
           {
-            post?.comments?.map(comment => 
+            post?.comments?.map(comment =>
               <CommentItem
-                canDelete = {user.id == comment.userId || user.id == post.userId}
-                onDelete = {onDeleteComment}
-                item = {comment}
-                highlight = {comment.id == commentId}
+                canDelete={user.id == comment.userId || user.id == post.userId}
+                onDelete={onDeleteComment}
+                item={comment}
+                highlight={comment.id == commentId}
                 key={comment?.id.toString()}
               />
             )
@@ -214,7 +220,7 @@ const PostDetails = () => {
 
           {
             post?.comments?.length == 0 && (
-              <Text style={{color : theme.colors.text, marginLeft : 5}}>
+              <Text style={{ color: theme.colors.text, marginLeft: 5 }}>
                 Be first to comment!
               </Text>
             )

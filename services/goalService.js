@@ -1,14 +1,14 @@
 import { supabase } from "../lib/supabase";
 
 export const getDailyPostDetail = async () => {
-    const today = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-    
-    // Parse the date string in the format 'dd/mm/yyyy, hh:mm:ss AM/PM'
-    const localDate = new Date(today.split(',')[0].trim().split('/').reverse().join('-')); 
+    // Get current UTC time and convert it to IST
+    const now = new Date();
+    const utcOffset = 5.5 * 60 * 60 * 1000; // IST is UTC +5:30
+    const istDate = new Date(now.getTime() + utcOffset);
 
-    const isoDate = localDate.toISOString().split('T')[0]; // Extract only the date part (YYYY-MM-DD)
-    
-    console.log(isoDate); // Will log the date in ISO string format: YYYY-MM-DD
+    const isoDate = istDate.toISOString().split('T')[0]; // Extract YYYY-MM-DD
+
+    console.log(isoDate); // Should log the correct ISO date
 
     const { data, error } = await supabase
         .from('goal_schedule')
@@ -16,7 +16,7 @@ export const getDailyPostDetail = async () => {
             *,
             goals:goalid (title, type)
         `)
-        .eq('date', isoDate) // Use ISO date for querying
+        .eq('date', isoDate) // Query using the correct date format
         .maybeSingle();
 
     if (error) {
@@ -26,6 +26,7 @@ export const getDailyPostDetail = async () => {
 
     return { success: true, data };
 };
+
 
 
 export const createOrUpdateGoal = async (goal) => {
