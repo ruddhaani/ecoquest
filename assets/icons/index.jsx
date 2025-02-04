@@ -22,8 +22,10 @@ import Delete from './Delete';
 import Logout from './logout';
 import Image from './Image';
 import Video from './Video';
+import RankingIcon from './Rank';
 
 const icons = {
+    rank : RankingIcon,
     home: Home,
     mail: Mail,
     lock: Lock,

@@ -122,9 +122,9 @@ const Home = () => {
 
 
     return () => {
-      supabase.removeChannel(postChannel);
-      supabase.removeChannel(commentChannel);
-      supabase.removeChannel(notificationChannel);
+      postChannel.unsubscribe();
+      commentChannel.unsubscribe();
+      notificationChannel.unsubscribe();
     };
   }, []);
 

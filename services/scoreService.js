@@ -39,3 +39,26 @@ export const updateUserScore = async (userId, points) => {
         return { success: false, msg: err.message };
     }
 };
+
+
+const getLeaderBoard =async () => {
+    try {
+        const {data , error} = await supabase
+        .from('scores')
+        .select(`
+            *,
+            user: userid(*),
+        `)
+        .order('score' , {ascending : false})
+        .limit(10);
+
+        if(error){
+            return {success : false , msg : error.message}
+        }
+
+        return {success : true , data : data};
+    } catch (error) {
+        console.error(error)
+        return {success : false , msg : error.message}
+    }
+}

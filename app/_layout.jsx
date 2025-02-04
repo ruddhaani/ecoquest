@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getUserData } from '../services/userServices'
 
-LogBox.ignoreLogs(['Warning: TNodeChildrenRenderer' , 'Warning: MemoizedTNodeRenderer' , 'Warning: TRenderEngineProvider'])
+LogBox.ignoreLogs(['Warning: TNodeChildrenRenderer' , 'Warning: MemoizedTNodeRenderer' , 'Warning: TRenderEngineProvider' , 'AuthApiError: Invalid Refresh Token'])
 
 const _layout = () => {
   return (
