@@ -41,13 +41,13 @@ export const updateUserScore = async (userId, points) => {
 };
 
 
-const getLeaderBoard =async () => {
+export const getLeaderBoard = async () => {
     try {
         const {data , error} = await supabase
         .from('scores')
         .select(`
             *,
-            user: userid(*),
+            user: userid(*)
         `)
         .order('score' , {ascending : false})
         .limit(10);
@@ -56,6 +56,7 @@ const getLeaderBoard =async () => {
             return {success : false , msg : error.message}
         }
 
+        console.log(data);
         return {success : true , data : data};
     } catch (error) {
         console.error(error)
