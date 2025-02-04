@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '../../components/ScreenWrapper'
 import Header from '../../components/Header'
-import { wp } from '../../helpers/common'
+import { hp, wp } from '../../helpers/common'
 import { getLeaderBoard } from '../../services/scoreService'
+import LeaderboardItem from '../../components/LeaderboardItem'
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderBoard] = useState([]);
@@ -28,13 +29,13 @@ const Leaderboard = () => {
     <ScreenWrapper bg='white'>
       <View style = {styles.container}>
         <Header title='Leaderboard' />
-        <View>
+        <ScrollView style={{marginTop : hp(4)}}>
             {
-                leaderboard.map((score) => {
-                    return <View><Text>{score?.user?.name}</Text></View>
+                leaderboard.map((score , index) => {
+                    return <LeaderboardItem item={score} rank = {index + 1} />
                 })
             }
-        </View>
+        </ScrollView>
       </View>
     </ScreenWrapper>
   )
