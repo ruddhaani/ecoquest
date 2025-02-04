@@ -29,6 +29,8 @@ const PostDetails = () => {
   const inputRef = useRef(null);
   const commentRef = useRef("");
 
+  // console.log(post);
+
   const handleNewComment = async (newComment) => {
     try {
       let res = await getUserData(newComment.userId);
@@ -120,7 +122,7 @@ const PostDetails = () => {
     let res = await removePost(post.id);
 
     console.log("Updating score for User ID:", user?.id);
-    let updateScoreRes = await updateUserScore(post?.userId, -50);
+    let updateScoreRes = await updateUserScore(post?.userId, removePostScore);
     console.log("Update Score Response:", updateScoreRes);
     if (res.success) {
       router.back();

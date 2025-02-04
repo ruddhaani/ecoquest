@@ -12,6 +12,8 @@ import { downloadFile, getSupabaseFileUri } from '../services/imageService'
 import { createPostLike, removePostLike } from '../services/postService'
 import Loading from '../components/Loading'
 import { Video } from 'expo-av'
+import { updateUserScore } from '../services/scoreService'
+import { addLikeScore, removeLikeScore } from '../helpers/scoreMechanism'
 
 const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = true, showDelete = false, onDelete = () => { }, onEdit = () => { } }) => {
 
@@ -72,6 +74,8 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
             setLikes(newLikes);
 
             let res = await removePostLike(item?.id, currentUser?.id);
+            let updateScoreRes = await updateUserScore(item?.user?.id , removeLikeScore);
+            console.log("Update Score Response:", updateScoreRes);
             if (!res.success) {
                 Alert.alert('Post', "Couldn't unlike the post!");
             }
@@ -85,7 +89,9 @@ const PostCard = ({ item, currentUser, router, hasShadow = true, showMoreIcon = 
             setLikes(newLikes);
 
             let res = await createPostLike(data);
-            console.log(res);
+            let updateScoreRes = await updateUserScore(item?.user?.id , addLikeScore);
+            console.log("Update Score Response:", updateScoreRes);
+            console.log('like details: ' , res);
             if (!res.success) {
                 Alert.alert('Post', "Couldn't like the post!");
             }

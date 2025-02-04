@@ -176,7 +176,7 @@ const NewPost = () => {
     let goalRes = await createOrUpdateGoal(goalData);
 
     console.log("Updating score for User ID:", user?.id);
-    let updateScoreRes = await updateUserScore(user?.id, 50);
+    let updateScoreRes = await updateUserScore(user?.id, addPostScore);
     console.log("Update Score Response:", updateScoreRes);
 
     console.log("status", goalCompleted);
