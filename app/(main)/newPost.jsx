@@ -18,7 +18,7 @@ import { createOrUpdatePost } from '../../services/postService'
 import { Video } from 'expo-av'
 import { createOrUpdateGoal, getDailyPostDetail, getGoalCompletionDetails } from '../../services/goalService'
 import { updateUserScore } from '../../services/scoreService'
-import { addPostScore } from '../../helpers/scoreMechanism'
+import { addPostScore, removePostScore } from '../../helpers/scoreMechanism'
 
 const NewPost = () => {
   const post = useLocalSearchParams();
@@ -174,7 +174,9 @@ const NewPost = () => {
     // console.log(goalData);
     let goalRes = await createOrUpdateGoal(goalData);
 
-    let updateScoreRes = await updateUserScore(user?.id, addPostScore);
+    if(!post?.id){
+      let updateScoreRes = await updateUserScore(user?.id, addPostScore);
+    }
 
     console.log("status", goalCompleted);
 

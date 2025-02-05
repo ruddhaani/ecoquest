@@ -76,6 +76,8 @@ const EditProfile = () => {
         
         setLoading(false)
 
+        
+
         if(res.success){
             setUserData({...currentUser, ...userData});
             router.back();

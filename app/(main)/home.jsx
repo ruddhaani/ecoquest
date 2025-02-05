@@ -16,6 +16,7 @@ import { getUserData } from '../../services/userServices'
 var limit = 0;
 
 const Home = () => {
+  console.log(supabase.getChannels());
   const { user, setAuth } = useAuth();
   const router = useRouter();
   const [notificationCount, setNotificationCount] = useState(0);
@@ -47,11 +48,11 @@ const Home = () => {
       newPost.user = res.success ? res.data : {};
       setPosts((prevPosts) => [newPost, ...prevPosts]);
     }
-  
+
     if (payload.eventType === "DELETE" && payload?.old?.id) {
       setPosts((prevPosts) => prevPosts.filter((post) => post.id !== payload.old.id));
     }
-  
+
     if (payload.eventType === "UPDATE" && payload.new?.id) {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -62,7 +63,7 @@ const Home = () => {
       );
     }
   };
-  
+
 
   const handleCommentEvent = (payload) => {
     if (payload.eventType === "DELETE") {
@@ -89,15 +90,35 @@ const Home = () => {
   };
 
   useEffect(() => {
-    
+
     let postChannel = supabase
       .channel('posts')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'posts' },
-        (payload) => handlePostEvent(payload)
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("New Post Added:", payload);
+          handlePostEvent(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("Post Updated:", payload);
+          handlePostEvent(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("Post Deleted:", payload);
+          handlePostEvent(payload);
+        }
       )
       .subscribe();
+
 
     let commentChannel = supabase
       .channel('comments')
@@ -118,15 +139,12 @@ const Home = () => {
       .subscribe();
 
     getPosts();
-
-
-
     return () => {
       postChannel.unsubscribe();
       commentChannel.unsubscribe();
       notificationChannel.unsubscribe();
     };
-  }, []);
+  });
 
   // console.log('USER IS THIS IS THE USER IS THE THIS: ' , user);
   // const onLogout = async () => {
@@ -165,7 +183,7 @@ const Home = () => {
             </Pressable>
 
             <Pressable onPress={() => router.push('leaderboard')}>
-              <Icon name="rank" size = {hp(3.2)} strokeWidth={2} color={theme.colors.text} />
+              <Icon name="rank" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
             </Pressable>
 
             <Pressable onPress={() => router.push('newPost')}>
