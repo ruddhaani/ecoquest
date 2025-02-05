@@ -12,6 +12,7 @@ import Avatar from '../../components/Avatar'
 import { fetchPosts } from '../../services/postService'
 import Loading from '../../components/Loading'
 import PostCard from '../../components/PostCard'
+import { getUserScore } from '../../services/scoreService'
 
 var limit = 0
 const Profile = () => {
@@ -85,6 +86,7 @@ const Profile = () => {
         .subscribe();
   
       getPosts();
+      getScore();
   
       return () => {
         supabase.removeChannel(postChannel);
@@ -93,7 +95,7 @@ const Profile = () => {
     }, []);
   
 
-  const { user, setAuth } = useAuth();
+  const { user} = useAuth();
   const router = useRouter();
 
   const [posts, setPosts] = useState([]);
@@ -106,6 +108,22 @@ const Profile = () => {
       Alert.alert('Signout', "Error signing out!");
     }
   }
+
+  const [score , setScore] = useState(0);
+
+
+  const getScore = async () => {
+    if(user && user?.id){
+      const res = await getUserScore(user?.id);
+
+      if(res.success){
+        setScore(res.data.score);
+      }else{
+        console.log(res.msg);
+      }
+    }
+  }
+
 
   const getPosts = async () => {
       if (!hasMore) return null;
@@ -120,6 +138,7 @@ const Profile = () => {
         setPosts(res.data);
       }
     }
+    
 
     
 
@@ -144,7 +163,7 @@ const Profile = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listStyle}
           keyExtractor={item => item.id.toString()}
-          ListHeaderComponent={<UserHeader user={user} router={router} handleLogout={handleLogout} />}
+          ListHeaderComponent={<UserHeader user={user} score = {score} router={router} handleLogout={handleLogout} />}
           ListHeaderComponentStyle = {{marginBottom : 30}}
           onEndReached={() => {
             getPosts();
@@ -170,7 +189,7 @@ const Profile = () => {
   )
 }
 
-const UserHeader = ({ user, router, handleLogout }) => (
+const UserHeader = ({ user, router, score , handleLogout }) => (
   <View style={{ flex: 1, backgroundColor: 'white', paddingHorizontal: wp(4) }}>
     <View>
       <Header title="Profile" mb={30} />
@@ -197,40 +216,25 @@ const UserHeader = ({ user, router, handleLogout }) => (
         <View style={{ alignItems: 'center', gap: 4 }}>
           <Text style={styles.username}>{user && user.name}</Text>
           <Text style={styles.infoText}>{user && user.address}</Text>
-        </View>
-
-        {/* Bio */}
-        <View style={{ gap: 10 }}>
-          <View style={[styles.info , {justifyContent: 'center'}]}>
-            <Icon name="mail" size={20} color={theme.colors.textLight} />
-            <Text style={styles.infoText}>
-              {user && user.email}
-            </Text>
-          </View>
-
-          {
-            user && user.phoneNumber && (
-              <View style={[styles.info , {justifyContent: 'center'}]}>
-                <Icon name="call" size={20} color={theme.colors.textLight} />
-                <Text style={styles.infoText}>
-                  {user.phoneNumber}
-                </Text>
-              </View>
-            )
-          }
-
           {
             user && user.bio && (
-              <Text style={[styles.info , {textAlign: 'center'}]}>
+              <Text style={[styles.infoText , {textAlign: 'center'}]}>
                 {user.bio}
               </Text>
             )
           }
 
+          {
+            user && (
+              <Text style={[styles.infoText , {textAlign: 'center'}]}>
+                Score: {score}
+              </Text>
+            )
+          }
+        </View>
         </View>
       </View>
     </View>
-  </View>
 )
 
 export default Profile

@@ -1,5 +1,6 @@
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
+import { KeyboardAvoidingView, Platform } from 'react-native';
 import ScreenWrapper from '../../components/ScreenWrapper'
 import Header from '../../components/Header'
 import { theme } from '../../constants/theme'
@@ -204,8 +205,13 @@ const NewPost = () => {
     )
   }
   return (
+
     <ScreenWrapper bg='white'>
-      <View style={styles.container}>
+      <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"} // iOS uses "padding", Android uses "height"
+      style={{ flex: 1 }}
+    >
+      <View style={styles.container} keyboardShouldPersistTaps="handled">
         <Header title="Daily Challenge" />
         <ScrollView contentContainerStyle={{ gap: 20 }}>
           <View style={styles.goal}>
@@ -300,7 +306,7 @@ const NewPost = () => {
 
         <Button title={post && post.id ? "Update" : "Post"} buttonStyle={{ height: hp(6.2) }} loading={loading} onPress={onSubmit} />
       </View>
-
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   )
 }

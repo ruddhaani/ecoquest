@@ -12,10 +12,10 @@ const Button = ({buttonStyle,
     hasShadow = true}) => {
     
         const shadowStyle = {
-            shadowColor : theme.colors.dark,
+            shadowColor : theme.colors.darkLight,
             shadowOffset :  {width : 0, height : 10},
             shadowOpacity : 1,
-            shadowRadius : 8,
+            shadowRadius : 4,
             elevation : 4
         }
 

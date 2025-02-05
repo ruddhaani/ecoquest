@@ -27,16 +27,16 @@ const Leaderboard = () => {
 
   return (
     <ScreenWrapper bg='white'>
-      <View style = {styles.container}>
+      <ScrollView style = {styles.container}>
         <Header title='Leaderboard' />
-        <ScrollView style={{marginTop : hp(4)}}>
+        <View style={{marginTop : hp(4)}}>
             {
                 leaderboard.map((score , index) => {
-                    return <LeaderboardItem item={score} rank = {index + 1} />
+                    return <LeaderboardItem key={index} item={score} rank = {index + 1} />
                 })
             }
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
     </ScreenWrapper>
   )
 }

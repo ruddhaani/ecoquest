@@ -63,3 +63,22 @@ export const getLeaderBoard = async () => {
         return {success : false , msg : error.message}
     }
 }
+
+export const getUserScore = async (userId) => {
+    try {
+        const {data , error} = await supabase
+        .from('scores')
+        .select('score')
+        .eq('userid' , userId)
+        .single();
+
+        if(error){
+            return {success : false, msg : error};
+        }
+        console.log(data);
+        return {success : true , data : data};
+        
+    } catch (error) {
+        return {success : false, msg : error};
+    }
+}
