@@ -311,6 +311,7 @@ const styles = StyleSheet.create({
         borderRadius: theme.radius.xxl * 1.1,
         borderCurve: 'continuous',
         padding: 10,
+        marginHorizontal: wp(2),
         paddingVertical: 12,
         backgroundColor: 'white',
         borderWidth: 0.5,

@@ -88,28 +88,65 @@ const Home = () => {
   };
 
   useEffect(() => {
-    let postChannel = supabase?.channel('posts')
-      ?.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, handlePostEvent)
-      ?.on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, handlePostEvent)
-      ?.on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, handlePostEvent)
-      ?.subscribe();
 
-    let commentChannel = supabase?.channel('comments')
-      ?.on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, handleCommentEvent)
-      ?.subscribe();
+    let postChannel = supabase
+      .channel('posts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("New Post Added:", payload);
+          handlePostEvent(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("Post Updated:", payload);
+          handlePostEvent(payload);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'posts' },
+        (payload) => {
+          console.log("Post Deleted:", payload);
+          handlePostEvent(payload);
+        }
+      )
+      .subscribe();
 
-    let notificationChannel = supabase?.channel('notifications')
-      ?.on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `receiverId=eq.${user?.id}` }, handleNewNotification)
-      ?.subscribe();
+
+    let commentChannel = supabase
+      .channel('comments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'comments' },
+        (payload) => handleCommentEvent(payload)
+      )
+      .subscribe();
+
+    let notificationChannel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications', filter: `receiverId=eq.${user.id}` },
+        (payload) => handleNewNotification(payload)
+      )
+      .subscribe();
 
     getPosts();
 
     return () => {
+      postChannel.unsubscribe();
+      commentChannel.unsubscribe();
+      notificationChannel.unsubscribe();
       postChannel?.unsubscribe();
       commentChannel?.unsubscribe();
       notificationChannel?.unsubscribe();
     };
-  }, []);
+  } , []);
 
   return (
     <ScreenWrapper bg='white'>
@@ -128,6 +165,12 @@ const Home = () => {
                 </View>
               )}
             </Pressable>
+            <Pressable onPress={() => router.push('leaderboard')}>
+            <Icon name="rank" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
+            </Pressable>
+            <Pressable onPress={() => router.push('newPost')}>
+                <Icon name="plus" size={hp(3.2)} strokeWidth={2} color={theme.colors.text} />
+              </Pressable>
             <Pressable onPress={() => router.push('profile')}>
               <Avatar
                 uri={user?.image}
@@ -139,6 +182,7 @@ const Home = () => {
           </View>
         </View>
         <FlatList
+          style = {{marginTop : hp(1.7)}}
           data={posts}
           keyExtractor={item => item?.id?.toString()}
           renderItem={({ item }) => <PostCard item={item} currentUser={user} router={router} />}
@@ -154,7 +198,8 @@ export default Home;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    marginBottom : hp(1.7)
   },
 
   header: {
