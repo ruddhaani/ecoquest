@@ -3,7 +3,7 @@ import { supabase } from "../lib/supabase";
 export const getDailyPostDetail = async () => {
     // Get current UTC time and convert it to IST
     const now = new Date();
-    const utcOffset = 5.5 * 60 * 60 * 1000; // IST is UTC +5:30
+    const utcOffset = 0; // IST is UTC +5:30
     const istDate = new Date(now.getTime() + utcOffset);
 
     const isoDate = istDate.toISOString().split('T')[0]; // Extract YYYY-MM-DD
